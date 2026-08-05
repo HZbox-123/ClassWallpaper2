@@ -17,3 +17,6 @@ publish/
 
 # 测试临时数据
 testdata/
+
+# 测试残留
+/CustomRootTest/
