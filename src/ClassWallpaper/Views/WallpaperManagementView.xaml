@@ -1,0 +1,92 @@
+<UserControl x:Class="ClassWallpaper.Views.WallpaperManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 工具栏 -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <Button Content="刷新"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding RefreshCommand}"
+                    DockPanel.Dock="Left" />
+            <Button Content="应用到桌面"
+                    Command="{Binding ApplyToDesktopCommand}"
+                    Margin="8,0,0,0"
+                    DockPanel.Dock="Left" />
+            <TextBlock Text="{Binding StatusMessage}"
+                       VerticalAlignment="Center"
+                       Margin="12,0,0,0"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+
+        <!-- 左：绑定列表；右：预览 -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ListView ItemsSource="{Binding Entries}"
+                      SelectedItem="{Binding SelectedEntry}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="姓名"
+                                        Width="130"
+                                        DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Header="壁纸状态" Width="140">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="已绑定" />
+                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasImage}" Value="False">
+                                                        <Setter Property="Text" Value="缺失" />
+                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
+            <Border Grid.Column="1"
+                    Margin="10,0,0,0"
+                    Background="White"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <Grid>
+                    <TextBlock Text="预览区"
+                               Foreground="#CCCCCC"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                    <Image Source="{Binding PreviewImage}"
+                           Stretch="Uniform"
+                           Margin="10" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 底部：预览路径 -->
+        <TextBlock Grid.Row="2"
+                   Text="{Binding PreviewPath}"
+                   Margin="0,6,0,0"
+                   Foreground="{StaticResource TextMutedBrush}"
+                   TextTrimming="CharacterEllipsis" />
+    </Grid>
+</UserControl>

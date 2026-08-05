@@ -1,0 +1,19 @@
+﻿# 编译产物
+bin/
+obj/
+publish/
+
+# 运行时数据（部署机自动生成，不入库）
+/Config/
+/Wallpapers/
+/Logs/
+/ClassWallpaper.exe
+*.root
+
+# 编辑器
+.vs/
+*.user
+*.suo
+
+# 测试临时数据
+testdata/

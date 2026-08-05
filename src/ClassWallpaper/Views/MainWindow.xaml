@@ -1,0 +1,248 @@
+<Window x:Class="ClassWallpaper.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:ClassWallpaper.Views"
+        Title="{Binding AppName}"
+        Icon="/ClassWallpaper;component/Assets/ClassWallpaper.ico"
+        Width="920"
+        Height="660"
+        Background="{StaticResource WindowBgBrush}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanMinimize">
+    <TabControl Margin="20" Background="Transparent" BorderThickness="0">
+        <!-- 概览：今日轮值 / 统计 / 系统状态 / 待办提醒 / 快捷操作 -->
+        <TabItem Header="概览">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 标题 -->
+                    <StackPanel Grid.Row="0" Margin="8,0,0,14">
+                        <TextBlock Text="{Binding AppName}"
+                                   FontSize="26"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Text="{Binding Version, StringFormat=版本：{0}}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+
+                    <!-- 今日轮值大字卡片 -->
+                    <Border Grid.Row="1"
+                            Background="{StaticResource BrandLightBrush}"
+                            BorderBrush="{StaticResource BrandBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="24,18"
+                            Margin="8,0,8,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="今日轮值"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                                <TextBlock Text="{Binding TodayName}"
+                                           FontSize="36"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource BrandBrush}"
+                                           Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding TodaySubInfo}"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           Margin="0,6,0,0" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <Button Content="立即换壁纸"
+                                        Command="{Binding ApplyNowCommand}"
+                                        Margin="0,0,0,8" />
+                                <Button Content="打开壁纸目录"
+                                        Command="{Binding OpenWallpapersCommand}"
+                                        Style="{StaticResource SecondaryButton}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- 数据统计卡片 -->
+                    <UniformGrid Grid.Row="2" Columns="4" Margin="8,0,8,14">
+                        <Border Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="14,12"
+                                Margin="0,0,8,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding UserCount}"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="人员总数"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="14,12"
+                                Margin="4,0,4,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding BoundCount}"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource SuccessBrush}" />
+                                <TextBlock Text="已上传壁纸"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="14,12"
+                                Margin="4,0,4,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding MissingCount}"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource DangerBrush}" />
+                                <TextBlock Text="壁纸缺失"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Background="White"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="14,12"
+                                Margin="8,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ScheduleCount}"
+                                           FontSize="26"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="排班天数"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- 系统状态 -->
+                    <Border Grid.Row="3"
+                            Background="White"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16,12"
+                            Margin="8,0,8,14">
+                        <StackPanel>
+                            <TextBlock Text="系统状态"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding SystemStatusText}"
+                                       Foreground="{StaticResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding LastAppliedText, StringFormat=上次执行壁纸：{0}}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 待办提醒 -->
+                    <Border Grid.Row="4"
+                            Background="White"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16,12"
+                            Margin="8,0,8,14">
+                        <StackPanel>
+                            <TextBlock Text="待办提醒"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       Margin="0,0,0,8" />
+                            <ItemsControl ItemsSource="{Binding Warnings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   Foreground="#B7791F"
+                                                   Margin="0,2,0,2"
+                                                   TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding NoWarningText}"
+                                       Foreground="{StaticResource SuccessBrush}"
+                                       Visibility="{Binding HasNoWarnings, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 存储位置 -->
+                    <Border Grid.Row="5"
+                            Background="White"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16,12"
+                            Margin="8,0,8,14">
+                        <StackPanel>
+                            <TextBlock Text="数据存储位置（全部位于 D 盘，不依赖 C 盘）"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding ConfigPath, StringFormat=配置：{0}}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="12" />
+                            <TextBlock Text="{Binding WallpapersPath, StringFormat=壁纸：{0}}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="12" />
+                            <TextBlock Text="{Binding LogsPath, StringFormat=日志：{0}}"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="12" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 状态栏 -->
+                    <TextBlock Grid.Row="6"
+                               Text="{Binding StatusMessage}"
+                               Foreground="{StaticResource SuccessBrush}"
+                               Margin="8,0,0,0" />
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- 人员管理 -->
+        <TabItem Header="人员管理">
+            <views:UserManagementView x:Name="UserView" />
+        </TabItem>
+
+        <!-- 壁纸管理 -->
+        <TabItem Header="壁纸管理">
+            <views:WallpaperManagementView x:Name="WallpaperView" />
+        </TabItem>
+
+        <!-- 排班计划 -->
+        <TabItem Header="排班计划">
+            <views:ScheduleManagementView x:Name="ScheduleView" />
+        </TabItem>
+
+        <!-- 设置 -->
+        <TabItem Header="设置">
+            <views:SettingsView x:Name="SettingsViewControl" />
+        </TabItem>
+    </TabControl>
+</Window>
