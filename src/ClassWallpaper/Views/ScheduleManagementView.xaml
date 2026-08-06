@@ -90,7 +90,7 @@
             </StackPanel>
         </Border>
 
-        <!-- 计划列表（支持直接编辑：日期/姓名） -->
+        <!-- 计划列表（区间展示：开始日期 ~ 结束日期 + 人员，支持直接编辑） -->
         <DataGrid Grid.Row="2"
                   ItemsSource="{Binding Items}"
                   SelectedItem="{Binding SelectedItem}"
@@ -99,7 +99,7 @@
                   CanUserDeleteRows="True"
                   HeadersVisibility="Column">
             <DataGrid.Columns>
-                <DataGridTemplateColumn Header="日期" Width="150">
+                <DataGridTemplateColumn Header="开始日期" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Date, StringFormat='{}{0:yyyy-MM-dd}'}"
@@ -109,6 +109,19 @@
                     <DataGridTemplateColumn.CellEditingTemplate>
                         <DataTemplate>
                             <DatePicker SelectedDate="{Binding Date, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="结束日期" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding EndDateOrDate, StringFormat='{}{0:yyyy-MM-dd}'}"
+                                       VerticalAlignment="Center" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>

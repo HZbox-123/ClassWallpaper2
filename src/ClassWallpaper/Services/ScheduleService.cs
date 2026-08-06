@@ -9,8 +9,9 @@ namespace ClassWallpaper.Services;
 /// <summary>
 /// 排班服务实现：
 /// - 日期规则：起止日期内匹配自定义星期几（可多选），节假日自动跳过；
-/// - 人员规则：按 users.json 排序顺序循环分配，同一周内每人最多一次
-///   （当一周排班天数多于人数时，放宽限制继续循环）；
+/// - 人员规则：按 users.json 排序顺序循环分配，同一周内每人最多一次；
+/// - 区间化：每个排班日生成一个连续区间（开始=排班日，结束=下一个排班日前一天），
+///   中间非排班日期归属于当前区间，保证每天都有覆盖；
 /// - 生成参数与结果一并保存到 schedule.json，界面可回显并手动修改。
 /// </summary>
 public sealed class ScheduleService : IScheduleService
@@ -51,7 +52,7 @@ public sealed class ScheduleService : IScheduleService
             throw new InvalidOperationException("人员列表为空，请先在「人员管理」中添加人员");
         }
 
-        // 1) 候选日期：起止范围内匹配星期、排除节假日
+        // 1) 候选排班日：起止范围内匹配星期、排除节假日
         var holidaySet = holidays.Select(h => h.Date).ToHashSet();
         var weekDaySet = weekDays.ToHashSet();
         var dates = new List<DateTime>();
@@ -71,7 +72,7 @@ public sealed class ScheduleService : IScheduleService
 
         foreach (var date in dates)
         {
-            var weekStart = date.AddDays(-((int)date.DayOfWeek + 6) % 7); // 所在周的周一
+            var weekStart = date.AddDays(-((int)date.DayOfWeek + 6) % 7);
             if (weekStart != currentWeekStart)
             {
                 weekUsed.Clear();
@@ -101,7 +102,16 @@ public sealed class ScheduleService : IScheduleService
             }
         }
 
-        // 3) 参数与结果一并保存
+        // 3) 区间化：每个排班日负责到下一个排班日前一天（最后一段到计划结束日期），
+        //    中间的非排班日期归属于当前区间，保证每天都有覆盖
+        for (var i = 0; i < items.Count; i++)
+        {
+            items[i].EndDate = i < items.Count - 1
+                ? items[i + 1].Date.AddDays(-1)
+                : endDate.Date;
+        }
+
+        // 4) 参数与结果一并保存
         var config = new ScheduleConfig
         {
             Items = items,
@@ -112,7 +122,7 @@ public sealed class ScheduleService : IScheduleService
         };
         _configService.SaveSchedule(config);
         Log.Information(
-            "排班生成完成：{Count} 天（{Start} ~ {End}，星期 {Days}，节假日 {HolidayCount}），人员 {People} 人",
+            "排班生成完成：{Count} 个区间（{Start} ~ {End}，星期 {Days}，节假日 {HolidayCount}），人员 {People} 人",
             items.Count, startDate.Date, endDate.Date,
             string.Join(",", weekDaySet.Select(w => (int)w).OrderBy(v => v)),
             holidaySet.Count, users.Count);
@@ -122,6 +132,6 @@ public sealed class ScheduleService : IScheduleService
     {
         schedule.Items.Sort((a, b) => a.Date.CompareTo(b.Date));
         _configService.SaveSchedule(schedule);
-        Log.Information("排班计划已保存：{Count} 天", schedule.Items.Count);
+        Log.Information("排班计划已保存：{Count} 个区间", schedule.Items.Count);
     }
 }
