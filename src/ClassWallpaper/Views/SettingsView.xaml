@@ -97,13 +97,6 @@
                                FontSize="12" />
                 </Grid>
 
-                <!-- 壁纸目录 -->
-                <Grid Margin="0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="180" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
                 <!-- 开机延迟检查 -->
                 <Grid Margin="0,4">
                     <Grid.ColumnDefinitions>
@@ -126,6 +119,13 @@
                                FontSize="12" />
                 </Grid>
 
+                <!-- 壁纸目录 -->
+                <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <TextBlock Text="壁纸目录"
                                VerticalAlignment="Center"
                                Foreground="{StaticResource TextPrimaryBrush}" />
