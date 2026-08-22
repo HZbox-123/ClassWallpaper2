@@ -66,15 +66,7 @@ public sealed class SchedulerService : ISchedulerService
         var target = items.FirstOrDefault(i =>
             i.Date.Date <= todayDate && todayDate <= i.EndDateOrDate.Date);
 
-        // 2) 已生效去重：上次执行 ≥ 命中区间开始日期 → 当前排班已应用
-        if (target is not null && lastApplied is { } last && last.Date >= target.Date.Date)
-        {
-            Log.Information("排班检查：当前排班已生效（{Name}，区间 {Start}~{End}，今天 {Today}）",
-                target.Name, target.Date.ToString("yyyy-MM-dd"),
-                target.EndDateOrDate.ToString("yyyy-MM-dd"), todayDate.ToString("yyyy-MM-dd"));
-            return SchedulerApplyResult.Skipped($"当前排班已生效：{target.Name}");
-        }
-
+        // 2) 命中即执行：区间内每一天/每次启动都重新设置壁纸（不抑制区间内重复）
         // 3) 错过补执行：今天不在任何区间时，补最近「早于今天且尚未应用过」的区间
         if (target is null)
         {
