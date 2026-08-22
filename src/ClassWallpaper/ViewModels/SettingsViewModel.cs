@@ -49,6 +49,14 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _wallpaperStyle, value);
     }
 
+    private string _startupCheckDelaySeconds = "0";
+
+    /// <summary>开机延迟检查壁纸（秒，0=立即执行）。</summary>
+    public string StartupCheckDelaySeconds
+    {
+        get => _startupCheckDelaySeconds;
+        set => SetProperty(ref _startupCheckDelaySeconds, value);
+    }
     private bool _showMainWindowOnStartup = true;
 
     /// <summary>启动时是否显示主窗口。</summary>
@@ -124,6 +132,7 @@ public sealed class SettingsViewModel : ObservableObject
         LogRetentionDays = _config.LogRetentionDays;
         WallpaperStyle = _config.WallpaperStyle;
         ShowMainWindowOnStartup = _config.ShowMainWindowOnStartup;
+        StartupCheckDelaySeconds = _config.StartupCheckDelaySeconds.ToString();
         RotationIntervalHours = _config.RotationIntervalHours;
         WallpapersDir = _config.WallpapersDir;
 
@@ -150,6 +159,9 @@ public sealed class SettingsViewModel : ObservableObject
             _config.LogRetentionDays = LogRetentionDays;
             _config.WallpaperStyle = WallpaperStyle;
             _config.ShowMainWindowOnStartup = ShowMainWindowOnStartup;
+            _config.StartupCheckDelaySeconds = int.TryParse(StartupCheckDelaySeconds.Trim(), out var delay) && delay >= 0
+                ? delay
+                : 0;
             _config.RotationIntervalHours = RotationIntervalHours;
             _config.WallpapersDir = WallpapersDir.Trim();
             _configService.SaveSettings(_config);

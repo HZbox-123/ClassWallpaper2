@@ -9,12 +9,13 @@ using Serilog;
 namespace ClassWallpaper.Services;
 
 /// <summary>
-/// 排班执行服务实现：
-/// - 今日执行：今天在 schedule.json 中有条目 → 设置该人员壁纸；
-/// - 错过补执行：今天无条目时，取「晚于上次执行日期且早于今天」的最近一条补执行；
-/// - 壁纸缺失处理：优先回退到默认壁纸（壁纸目录\默认.jpg 等），无默认壁纸则跳过；
-/// - 缺失提醒：当天首次检测到缺失时置 ShouldRemind（按天节流，避免每小时骚扰）；
-/// - 去重：执行后（无论是否成功）把 LastAppliedDate 更新为该条目日期。
+/// 排班执行服务实现（连续区间语义）：
+/// - 命中判断：只要「开始日期 ≤ 今天 ≤ 结束日期」即认为当前排班生效，
+///   区间中间的每一天都被覆盖（不再只看开始/结束两天）；
+/// - 去重：上次执行日期 ≥ 命中区间开始日期 → 当前排班已应用，跳过；
+/// - 错过补执行：今天不在任何区间时，补执行最近「早于今天且尚未应用过」的区间；
+/// - 壁纸缺失：优先回退默认壁纸（默认.jpg 等），无默认则跳过；当天首次缺失提醒（按天节流）；
+/// - 执行后把 LastAppliedDate 更新为今天，避免重复。
 /// 壁纸目录取自设置（AppConfig.WallpapersDir，可自定义）。
 /// </summary>
 public sealed class SchedulerService : ISchedulerService
@@ -51,8 +52,7 @@ public sealed class SchedulerService : ISchedulerService
     public SchedulerApplyResult CheckAndApply(DateTime today)
     {
         var settings = _configService.GetSettings();
-        var schedule = _configService.GetSchedule();
-        var items = schedule.Items.OrderBy(i => i.Date).ToList();
+        var items = _configService.GetSchedule().Items.OrderBy(i => i.Date).ToList();
         if (items.Count == 0)
         {
             Log.Information("排班检查：schedule.json 为空，跳过");
@@ -60,23 +60,34 @@ public sealed class SchedulerService : ISchedulerService
         }
 
         var todayDate = today.Date;
+        var lastApplied = settings.LastAppliedDate;
 
-        // 1) 今天有排班 → 直接执行
-        var target = items.FirstOrDefault(i => i.Date.Date == todayDate);
+        // 1) 命中判断：开始 ≤ 今天 ≤ 结束（连续区间，中间每一天都覆盖）
+        var target = items.FirstOrDefault(i =>
+            i.Date.Date <= todayDate && todayDate <= i.EndDateOrDate.Date);
 
-        // 2) 错过补执行：晚于上次执行日期且早于今天，取最近一条
+        // 2) 已生效去重：上次执行 ≥ 命中区间开始日期 → 当前排班已应用
+        if (target is not null && lastApplied is { } last && last.Date >= target.Date.Date)
+        {
+            Log.Information("排班检查：当前排班已生效（{Name}，区间 {Start}~{End}，今天 {Today}）",
+                target.Name, target.Date.ToString("yyyy-MM-dd"),
+                target.EndDateOrDate.ToString("yyyy-MM-dd"), todayDate.ToString("yyyy-MM-dd"));
+            return SchedulerApplyResult.Skipped($"当前排班已生效：{target.Name}");
+        }
+
+        // 3) 错过补执行：今天不在任何区间时，补最近「早于今天且尚未应用过」的区间
         if (target is null)
         {
-            var lastApplied = settings.LastAppliedDate;
             target = items
                 .Where(i => i.Date.Date < todayDate
-                            && (lastApplied is null || i.Date.Date > lastApplied.Value.Date))
+                            && (lastApplied is null || i.EndDateOrDate.Date > lastApplied.Value.Date))
                 .OrderByDescending(i => i.Date)
                 .FirstOrDefault();
 
             if (target is not null)
             {
-                Log.Information("排班检查：发现错过日期 {Date}（{Name}），补执行", target.Date, target.Name);
+                Log.Information("排班检查：发现错过区间 {Start}~{End}（{Name}），补执行",
+                    target.Date, target.EndDateOrDate, target.Name);
             }
             else
             {
@@ -87,16 +98,17 @@ public sealed class SchedulerService : ISchedulerService
             }
         }
 
-        // 3) 执行：查找该人员的壁纸图片
+        // 4) 执行：查找该人员的壁纸图片
         var imagePath = FindImage(target.Name);
         if (imagePath is null)
         {
-            return HandleMissingWallpaper(settings, target);
+            return HandleMissingWallpaper(settings, target, todayDate);
         }
 
         _wallpaperService.SetWallpaper(imagePath);
-        MarkApplied(settings, target.Date);
-        Log.Information("排班执行完成：{Date} {Name} → {Path}", target.Date, target.Name, imagePath);
+        MarkApplied(settings, todayDate);
+        Log.Information("排班执行完成：{Date} {Name} → {Path}",
+            target.Date, target.Name, imagePath);
         return SchedulerApplyResult.AppliedResult(target.Date, target.Name, imagePath);
     }
 
@@ -104,10 +116,10 @@ public sealed class SchedulerService : ISchedulerService
     /// 人员壁纸缺失：回退默认壁纸（有则设置并标记为已应用），无默认则跳过；
     /// 两者都置 MissingWallpaper，并按天节流返回 ShouldRemind。
     /// </summary>
-    private SchedulerApplyResult HandleMissingWallpaper(AppConfig settings, ScheduleItem target)
+    private SchedulerApplyResult HandleMissingWallpaper(AppConfig settings, ScheduleItem target, DateTime todayDate)
     {
         var defaultImage = FindImage(DefaultWallpaperName);
-        MarkApplied(settings, target.Date); // 缺失也标记，避免反复补执行
+        MarkApplied(settings, todayDate); // 缺失也标记，避免反复补执行
         var remind = ShouldRemindOnce();
 
         if (defaultImage is not null)

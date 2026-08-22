@@ -1,6 +1,7 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using ClassWallpaper.Models;
 using ClassWallpaper.Services;
@@ -65,10 +66,10 @@ public partial class App : System.Windows.Application
 
         try
         {
-            // 1) 校验并创建 D 盘基础目录（配置/日志；壁纸目录按配置单独创建）
+            // 1) 校验并创建基础数据目录（配置/日志；壁纸目录按配置单独创建）
             PathHelper.EnsureDirectories();
 
-            // 2) 初始化日志（Serilog，写入 D:\ClassWallpaper\Logs）
+            // 2) 初始化日志（Serilog，写入数据根目录\Logs）
             LogService.Initialize();
             Log.Information("应用启动，版本 {Version}", AppInfo.Version);
 
@@ -113,21 +114,18 @@ public partial class App : System.Windows.Application
             _trayIconService.Show();
             Log.Information("系统托盘已启动");
 
-            // 6) 排班检查：今天有排班则换壁纸，错过日期则补执行；
-            //    壁纸缺失时回退默认壁纸，并按天首次弹气泡提醒
-            try
+            // 6) 首次排班检查：按「开机延迟检查」设置执行
+            //    - 延迟期间软件正常运行（异步 Task.Delay，不阻塞界面/托盘）
+            //    - 手动「立即换壁纸」（托盘菜单/界面按钮）始终立即执行，不受延迟影响
+            var delaySeconds = Math.Max(0, config.StartupCheckDelaySeconds);
+            if (delaySeconds > 0)
             {
-                var scheduler = _serviceProvider.GetRequiredService<ISchedulerService>();
-                var schedulerResult = scheduler.CheckAndApply();
-                Log.Information("排班检查：{Message}", schedulerResult.Message);
-                if (schedulerResult.ShouldRemind)
-                {
-                    _trayIconService?.ShowBalloon("壁纸缺失提醒", schedulerResult.Message);
-                }
+                Log.Information("开机延迟 {Delay} 秒后执行首次壁纸检查", delaySeconds);
+                _ = RunStartupCheckDelayedAsync(TimeSpan.FromSeconds(delaySeconds));
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error(ex, "排班检查/执行异常");
+                RunStartupCheck();
             }
 
             // 7) 显示主窗口：设置允许 且 非静默启动（开机自启带 -silent 参数 → 只驻留托盘不弹界面）
@@ -144,7 +142,7 @@ public partial class App : System.Windows.Application
             }
 
             // 8) 定时换壁纸检查：程序驻留期间跨排班日自动切换
-            //    首次 1 分钟后执行（启动时已检查过），间隔取自设置（默认 15 分钟）
+            //    首次 1 分钟后执行（首次检查可能延迟，此处为后续周期），间隔取自设置（默认 15 分钟）
             var intervalHours = config.RotationIntervalHours > 0 ? config.RotationIntervalHours : 0.25;
             _rotationTimer = new System.Threading.Timer(
                 OnRotationTick,
@@ -162,6 +160,44 @@ public partial class App : System.Windows.Application
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(-1);
+        }
+    }
+
+    /// <summary>延迟执行首次排班检查（异步等待，期间界面与托盘正常运行）。</summary>
+    private async Task RunStartupCheckDelayedAsync(TimeSpan delay)
+    {
+        try
+        {
+            await Task.Delay(delay);
+            RunStartupCheck();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "延迟排班检查任务异常");
+        }
+    }
+
+    /// <summary>执行排班检查并换壁纸（区间命中判断；缺失时回退默认壁纸并气泡提醒）。</summary>
+    private void RunStartupCheck()
+    {
+        try
+        {
+            var scheduler = _serviceProvider?.GetRequiredService<ISchedulerService>();
+            if (scheduler is null)
+            {
+                return;
+            }
+
+            var schedulerResult = scheduler.CheckAndApply();
+            Log.Information("排班检查：{Message}", schedulerResult.Message);
+            if (schedulerResult.ShouldRemind)
+            {
+                _trayIconService?.ShowBalloon("壁纸缺失提醒", schedulerResult.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "排班检查/执行异常");
         }
     }
 
@@ -230,6 +266,3 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
-
-
-

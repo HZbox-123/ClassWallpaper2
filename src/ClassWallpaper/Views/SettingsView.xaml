@@ -104,6 +104,28 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                <!-- 开机延迟检查 -->
+                <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="开机延迟检查（秒）"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource TextPrimaryBrush}" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding StartupCheckDelaySeconds, UpdateSourceTrigger=PropertyChanged}"
+                             HorizontalAlignment="Left"
+                             Width="120"
+                             VerticalContentAlignment="Center" />
+                    <TextBlock Grid.Column="1"
+                               Text="（开机后等待 N 秒再检查壁纸，0=立即；期间软件正常使用）"
+                               VerticalAlignment="Center"
+                               Margin="130,0,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="12" />
+                </Grid>
+
                     <TextBlock Text="壁纸目录"
                                VerticalAlignment="Center"
                                Foreground="{StaticResource TextPrimaryBrush}" />
