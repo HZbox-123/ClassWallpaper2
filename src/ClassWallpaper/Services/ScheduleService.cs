@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ClassWallpaper.Models;
+using ClosedXML.Excel;
 using Serilog;
 
 namespace ClassWallpaper.Services;
@@ -133,5 +134,50 @@ public sealed class ScheduleService : IScheduleService
         schedule.Items.Sort((a, b) => a.Date.CompareTo(b.Date));
         _configService.SaveSchedule(schedule);
         Log.Information("排班计划已保存：{Count} 个区间", schedule.Items.Count);
+    }
+
+    /// <summary>
+    /// 导出排班计划为 Excel：表头「开始日期 | 结束日期 | 星期几 | 人员姓名」，
+    /// 数据与界面一致（区间一行）；已排序列宽、表头样式、日期格式与细边框。
+    /// </summary>
+    public void ExportToExcel(string filePath)
+    {
+        var items = GetSchedule().Items;
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("排班计划");
+
+        sheet.Cell(1, 1).Value = "开始日期";
+        sheet.Cell(1, 2).Value = "结束日期";
+        sheet.Cell(1, 3).Value = "星期几";
+        sheet.Cell(1, 4).Value = "人员姓名";
+        var header = sheet.Range(1, 1, 1, 4);
+        header.Style.Font.Bold = true;
+        header.Style.Font.FontColor = XLColor.White;
+        header.Style.Fill.BackgroundColor = XLColor.FromHtml("#3B6FD4");
+        header.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+        var row = 2;
+        foreach (var item in items)
+        {
+            sheet.Cell(row, 1).Value = item.Date;
+            sheet.Cell(row, 2).Value = item.EndDateOrDate;
+            sheet.Cell(row, 3).Value = item.WeekdayText;
+            sheet.Cell(row, 4).Value = item.Name;
+            sheet.Cell(row, 1).Style.DateFormat.Format = "yyyy-MM-dd";
+            sheet.Cell(row, 2).Style.DateFormat.Format = "yyyy-MM-dd";
+            row++;
+        }
+
+        sheet.Column(1).Width = 16;
+        sheet.Column(2).Width = 16;
+        sheet.Column(3).Width = 10;
+        sheet.Column(4).Width = 20;
+        var body = sheet.Range(1, 1, row - 1, 4);
+        body.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        body.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        body.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+
+        workbook.SaveAs(filePath);
+        Log.Information("排班计划已导出 Excel：{Path}（{Count} 条）", filePath, items.Count);
     }
 }

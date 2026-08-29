@@ -83,6 +83,7 @@ public sealed class ScheduleManagementViewModel : ObservableObject
 
     public IRelayCommand GenerateCommand { get; }
     public IRelayCommand SaveCommand { get; }
+    public IRelayCommand ExportExcelCommand { get; }
     public IRelayCommand AddHolidayCommand { get; }
     public IRelayCommand RemoveHolidayCommand { get; }
 
@@ -93,6 +94,7 @@ public sealed class ScheduleManagementViewModel : ObservableObject
 
         GenerateCommand = new RelayCommand(Generate);
         SaveCommand = new RelayCommand(Save);
+        ExportExcelCommand = new RelayCommand(ExportExcel);
         AddHolidayCommand = new RelayCommand(AddHoliday);
         RemoveHolidayCommand = new RelayCommand(RemoveHoliday, () => SelectedHoliday is not null);
 
@@ -214,6 +216,39 @@ public sealed class ScheduleManagementViewModel : ObservableObject
             StatusMessage = $"保存失败:{ex.Message}";
         }
     }
+
+    /// <summary>导出当前排班计划为 Excel（与界面一致：开始/结束日期、星期、人员）。</summary>
+    private void ExportExcel()
+    {
+        if (Items.Count == 0)
+        {
+            StatusMessage = "暂无排班计划可导出";
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "导出排班计划",
+            Filter = "Excel 文件 (*.xlsx)|*.xlsx",
+            FileName = $"排班计划_{DateTime.Today:yyyyMMdd}.xlsx",
+        };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            _scheduleService.ExportToExcel(dialog.FileName);
+            StatusMessage = $"已导出排班计划到 {dialog.FileName}（{Items.Count} 条）";
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "导出排班计划失败");
+            StatusMessage = $"导出失败:{ex.Message}";
+        }
+    }
+
 
     private void AddHoliday()
     {

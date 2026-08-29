@@ -22,4 +22,7 @@ public interface IScheduleService
 
     /// <summary>保存手动修改后的计划（含界面参数）。</summary>
     void Save(ScheduleConfig schedule);
+
+    /// <summary>将当前排班计划导出为 Excel（开始日期/结束日期/星期/人员）。</summary>
+    void ExportToExcel(string filePath);
 }
